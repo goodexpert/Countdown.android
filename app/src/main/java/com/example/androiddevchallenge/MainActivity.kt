@@ -21,14 +21,30 @@ import android.view.MotionEvent
 import android.view.VelocityTracker
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -102,46 +118,41 @@ fun CarouselRuler(
 
     Canvas(
         modifier = modifier
-                .height(DEFAULT_HEIGHT.dp)
-                .padding(DEFAULT_PADDING.dp, 0.dp)
-                .pointerInteropFilter { event ->
-                    when (event.action) {
-                        MotionEvent.ACTION_DOWN -> {
-                            prevTouchX.value = event.x
-                            velocityTracker.clear()
-                            velocityTracker.addMovement(event)
-                            onStopped()
-                        }
-                        MotionEvent.ACTION_MOVE -> {
-                            currentTimer += (prevTouchX.value - event.x).toInt() * 2
-                            onChanged(currentTimer * 1000L, 0L)
-
-                            prevTouchX.value = event.x
-                            velocityTracker.addMovement(event)
-                        }
-                        MotionEvent.ACTION_UP -> {
-                            velocityTracker.computeCurrentVelocity(DEFAULT_UNITS)
-
-                            if (Math.abs(velocityTracker.xVelocity) > MIN_VELOCITY) {
-                                val transitionDuration = computeTransitionDuration(
-                                        DEFAULT_DURATION,
-                                        velocityTracker.xVelocity
-                                )
-                                val value = computeCurrentValue(currentTimer, velocityTracker.xVelocity)
-                                onChanged(value * 1000L, transitionDuration)
-                            } else {
-                                val value = computeNearestValue(currentTimer)
-                                onChanged(value * 1000L, DEFAULT_DURATION)
-                            }
-                        }
-                        MotionEvent.ACTION_CANCEL,
-                        MotionEvent.ACTION_OUTSIDE -> {
-
-                        }
-                        else -> false
+            .height(DEFAULT_HEIGHT.dp)
+            .padding(DEFAULT_PADDING.dp, 0.dp)
+            .pointerInteropFilter { event ->
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        prevTouchX.value = event.x
+                        velocityTracker.clear()
+                        velocityTracker.addMovement(event)
+                        onStopped()
                     }
-                    true
+                    MotionEvent.ACTION_MOVE -> {
+                        currentTimer += (prevTouchX.value - event.x).toInt() * 2
+                        onChanged(currentTimer * 1000L, 0L)
+
+                        prevTouchX.value = event.x
+                        velocityTracker.addMovement(event)
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        velocityTracker.computeCurrentVelocity(DEFAULT_UNITS)
+
+                        if (Math.abs(velocityTracker.xVelocity) > MIN_VELOCITY) {
+                            val transitionDuration = computeTransitionDuration(
+                                DEFAULT_DURATION,
+                                velocityTracker.xVelocity
+                            )
+                            val value = computeCurrentValue(currentTimer, velocityTracker.xVelocity)
+                            onChanged(value * 1000L, transitionDuration)
+                        } else {
+                            val value = computeNearestValue(currentTimer)
+                            onChanged(value * 1000L, DEFAULT_DURATION)
+                        }
+                    }
                 }
+                true
+            }
     ) {
         val lineHeight = size.height - TEXT_LINE_HEIGHT.dp.toPx()
         val nY = lineHeight
@@ -278,7 +289,7 @@ fun CountdownTimer(
 ) {
     val seconds = animateIntAsState(
         targetValue = (current / 1000).toInt(),
-        animationSpec= tween(durationMillis = animationDuration, easing = LinearOutSlowInEasing),
+        animationSpec = tween(durationMillis = animationDuration, easing = LinearOutSlowInEasing),
         finishedListener = { seconds ->
             if (state == CountdownState.IDLE) {
                 val temp = seconds % maxTime
@@ -304,8 +315,8 @@ fun CountdownTimer(
             current = currentTime,
             timeout = timeoutTime,
             modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
+                .fillMaxWidth()
+                .weight(1f)
         )
 
         CarouselRuler(
@@ -313,16 +324,16 @@ fun CountdownTimer(
             onChanged = onChangedTimeout,
             onStopped = { onChangedState(CountdownState.STOP) },
             modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
+                .fillMaxWidth()
+                .wrapContentHeight()
         )
 
         PlayButton(
             isRunning = state === CountdownState.PLAYING,
             onChanged = { onChangedState(it) },
             modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
+                .fillMaxWidth()
+                .weight(1f)
         )
     }
 }
@@ -366,8 +377,7 @@ fun MyApp() {
                             }.start()
                         }
                     }
-                    CountdownState.PAUSE,
-                    CountdownState.STOP -> {
+                    else -> {
                         if (state.value == CountdownState.PLAYING) {
                             countDownTimer.value?.cancel()
                             countDownTimer.value = null
