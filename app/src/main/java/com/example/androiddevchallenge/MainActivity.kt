@@ -364,7 +364,7 @@ fun MyApp() {
                 when (newState) {
                     CountdownState.PLAYING -> {
                         if (state.value != CountdownState.PLAYING) {
-                            val countDown = current.value
+                            val countDown = if (state.value == CountdownState.STOP) timeout.value else current.value
                             countDownTimer.value = object : CountDownTimer(countDown, COUNT_DOWN_INTERVAL) {
                                 override fun onTick(millisUntilFinished: Long) {
                                     current.value = millisUntilFinished
